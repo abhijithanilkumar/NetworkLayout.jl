@@ -1,3 +1,4 @@
+using BenchmarkTools
 using NetworkLayout.SFDP
 using NetworkLayout.Spring
 using NetworkLayout.ParallelSFDP
@@ -48,79 +49,82 @@ function roadnet()
 end
 roadnet_adj = roadnet()
 
-function benchmark()
+function benchmark_graphs()
 
-    @time rand(Int,1)
+    # Generic parameters
+    trials = 3
+    time = 300
+    iter = 1000
+    point = Point2f0
 
-    println("SFDP")
-    println("SFDP Jagmesh1")
-    positions = @time SFDP.layout(jagmesh_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time SFDP.layout(jagmesh_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    # SFDP parameters
+    tol = 0.9
+    K = 1
 
-    println("SFDP Harvard500")
-    positions = @time SFDP.layout(harvard_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time SFDP.layout(harvard_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    # Spring parameters
+    C = 2.0
+    temp = 2.0
 
-    println("SFDP airtraffic")
-    positions = @time SFDP.layout(airtraffic_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time SFDP.layout(airtraffic_adj, Point3f0, tol=0.9, K=1, iterations=10)
 
-    println("SFDP roadNet")
-    positions = @time SFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time SFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    # println("SFDP")
+    # println("SFDP Jagmesh1")
+    # @benchmark SFDP.layout($jagmesh_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials seconds=time
+    #
+    # println("SFDP Harvard500")
+    # @benchmark SFDP.layout($harvard_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials seconds=time
+    #
+    # println("SFDP airtraffic")
+    # @benchmark SFDP.layout($airtraffic_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials seconds=time
+
+    #println("SFDP roadNet")
+    #positions = @time SFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
+    #positions = @time SFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
 
     println("Parallel SFDP")
     println("Parallel SFDP Jagmesh1")
-    positions = @time ParallelSFDP.layout(jagmesh_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time ParallelSFDP.layout(jagmesh_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    @benchmark ParallelSFDP.layout($jagmesh_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
     println("Parallel SFDP Harvard500")
-    positions = @time ParallelSFDP.layout(harvard_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time ParallelSFDP.layout(harvard_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    @benchmark ParallelSFDP.layout($harvard_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
     println("Parallel SFDP airtraffic")
-    positions = @time ParallelSFDP.layout(airtraffic_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time ParallelSFDP.layout(airtraffic_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    @benchmark ParallelSFDP.layout($airtraffic_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
-    println("Parallel SFDP roadNet")
-    positions = @time ParallelSFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
-    positions = @time ParallelSFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
+    #println("Parallel SFDP roadNet")
+    #positions = @time ParallelSFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
+    #positions = @time ParallelSFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
 
-    println("Spring")
-    println("Spring Jagmesh1")
-    positions = @time Spring.layout(jagmesh_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time Spring.layout(jagmesh_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    # println("Spring")
+    # println("Spring Jagmesh1")
+    # @benchmark Spring.layout($jagmesh_adj, $point, C=$C, iterations=$iter, initialtemp=$temp)
+    #
+    # println("Spring Harvard500")
+    # @benchmark Spring.layout($harvard_adj, $point, C=$C, iterations=$iter, initialtemp=$temp)
+    #
+    # println("Spring airtraffic")
+    # @benchmark Spring.layout($airtraffic_adj, $point, C=$C, iterations=$iter, initialtemp=$temp)
 
-    println("Spring Harvard500")
-    positions = @time Spring.layout(harvard_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time Spring.layout(harvard_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
-
-    println("Spring airtraffic")
-    positions = @time Spring.layout(airtraffic_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time Spring.layout(airtraffic_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
-
-    println("Spring roadNet")
-    positions = @time Spring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time Spring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    #println("Spring roadNet")
+    #positions = @time Spring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
+    #positions = @time Spring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
 
     println("Parallel Spring")
 
     println("Parallel Spring Jagmesh1")
-    positions = @time ParallelSpring.layout(jagmesh_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time ParallelSpring.layout(jagmesh_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    @benchmark Spring.layout($jagmesh_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
     println("Parallel Spring Harvard500")
-    positions = @time ParallelSpring.layout(harvard_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time ParallelSpring.layout(harvard_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    @benchmark Spring.layout($harvard_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
     println("Parallel Spring airtraffic")
-    positions = @time ParallelSpring.layout(airtraffic_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time ParallelSpring.layout(airtraffic_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    @benchmark Spring.layout($airtraffic_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
-    println("Parallel Spring roadNet")
-    positions = @time ParallelSpring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
-    positions = @time ParallelSpring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+    #println("Parallel Spring roadNet")
+    #positions = @time ParallelSpring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
+    #positions = @time ParallelSpring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
+	
+	@everywhere GC.gc()
 
 end
 
-benchmark()
+benchmark_graphs()
