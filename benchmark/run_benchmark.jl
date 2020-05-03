@@ -53,7 +53,7 @@ function benchmark_graphs()
 
     # Generic parameters
     trials = 3
-    time = 300
+    time = 100
     iter = 1000
     point = Point2f0
 
@@ -65,6 +65,8 @@ function benchmark_graphs()
     C = 2.0
     temp = 2.0
 
+	results = Array{BenchmarkTools.TrialEstimate, 2}(undef, 2, 3)
+	idx = 1
 
     # println("SFDP")
     # println("SFDP Jagmesh1")
@@ -82,14 +84,15 @@ function benchmark_graphs()
 
     println("Parallel SFDP")
     println("Parallel SFDP Jagmesh1")
-    @benchmark ParallelSFDP.layout($jagmesh_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
+    result_jag = @benchmark ParallelSFDP.layout($jagmesh_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
     println("Parallel SFDP Harvard500")
-    @benchmark ParallelSFDP.layout($harvard_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
+    result_har = @benchmark ParallelSFDP.layout($harvard_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
     println("Parallel SFDP airtraffic")
-    @benchmark ParallelSFDP.layout($airtraffic_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
+    result_air = @benchmark ParallelSFDP.layout($airtraffic_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
+	results[idx, :] = vcat(mean(result_jag), mean(result_har), mean(result_air))
     #println("Parallel SFDP roadNet")
     #positions = @time ParallelSFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
     #positions = @time ParallelSFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
@@ -111,20 +114,26 @@ function benchmark_graphs()
     println("Parallel Spring")
 
     println("Parallel Spring Jagmesh1")
-    @benchmark Spring.layout($jagmesh_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
+    result_jag = @benchmark ParallelSpring.layout($jagmesh_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
     println("Parallel Spring Harvard500")
-    @benchmark Spring.layout($harvard_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
+    result_har = @benchmark ParallelSpring.layout($harvard_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
     println("Parallel Spring airtraffic")
-    @benchmark Spring.layout($airtraffic_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
+    result_air = @benchmark ParallelSpring.layout($airtraffic_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
+	results[idx + 1, :] = vcat(mean(result_jag), mean(result_har), mean(result_air))
     #println("Parallel Spring roadNet")
     #positions = @time ParallelSpring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
     #positions = @time ParallelSpring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
-	
+
 	@everywhere GC.gc()
 
+	for result in results
+		@show result
+	end
+
+	results
 end
 
 benchmark_graphs()
