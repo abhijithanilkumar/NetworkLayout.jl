@@ -52,7 +52,7 @@ function layout!(adj_matrix,
     ) where {N, T}
     network = Layout(adj_matrix, Point{N,T}; startpositions=startpositions, kw_args...)
     next = iterate(network)
-	state = nothing
+
     while next != nothing
         (i, state) = next
         next = iterate(network, state)
@@ -62,8 +62,6 @@ function layout!(adj_matrix,
     cleanup_shared(network.adj_matrix)
     cleanup_shared(network.energy_vec)
 
-	_, _, _, _, iter, _ = state
-	println("Performed $(iter) iterations")
     return network.positions
 end
 

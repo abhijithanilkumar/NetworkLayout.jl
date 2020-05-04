@@ -19,6 +19,16 @@ function jagmesh()
 end
 jagmesh_adj = jagmesh()
 
+function jagmesh8()
+    jagmesh_path = joinpath(dirname(@__FILE__), "jagmesh8.mtx")
+    array = round.(Int, open(readdlm, jagmesh_path))
+    row = array[:,1]
+    col = array[:,2]
+    entry = [(1:4303)...]
+    sparse(row,col,entry)
+end
+jagmesh8_adj = jagmesh8()
+
 function harvard()
     harvard_path = joinpath(dirname(@__FILE__), "Harvard500.mtx")
     array = round.(Int, open(readdlm, harvard_path))
@@ -44,7 +54,9 @@ function roadnet()
     array = round.(Int, open(readdlm, roadnet_path))
     row = array[:,1]
     col = array[:,2]
-    entry = [(1:1541898)...]
+    entry = [(1:3083796)...]
+    row = row .+ 1
+    col = col .+ 1
     sparse(row,col,entry)
 end
 roadnet_adj = roadnet()
@@ -52,9 +64,9 @@ roadnet_adj = roadnet()
 function benchmark_graphs()
 
     # Generic parameters
-    trials = 3
-    time = 100
-    iter = 1000
+    trials = 1
+    time = 5
+    iter = 1
     point = Point2f0
 
     # SFDP parameters
@@ -65,7 +77,7 @@ function benchmark_graphs()
     C = 2.0
     temp = 2.0
 
-	results = Array{BenchmarkTools.TrialEstimate, 2}(undef, 2, 3)
+	results = Array{BenchmarkTools.TrialEstimate, 2}(undef, 2, 5)
 	idx = 1
 
     # println("SFDP")
@@ -86,14 +98,19 @@ function benchmark_graphs()
     println("Parallel SFDP Jagmesh1")
     result_jag = @benchmark ParallelSFDP.layout($jagmesh_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
+	println("Parallel SFDP Jagmesh8")
+    result_jag8 = @benchmark ParallelSFDP.layout($jagmesh8_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
+
     println("Parallel SFDP Harvard500")
     result_har = @benchmark ParallelSFDP.layout($harvard_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
     println("Parallel SFDP airtraffic")
     result_air = @benchmark ParallelSFDP.layout($airtraffic_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
 
-	results[idx, :] = vcat(mean(result_jag), mean(result_har), mean(result_air))
-    #println("Parallel SFDP roadNet")
+    println("Parallel SFDP roadNet")
+	result_roadnet = @benchmark ParallelSFDP.layout($roadnet_adj, $point, tol=$tol, K=$K, iterations=$iter) samples=trials gcsample=true seconds=time
+
+	results[idx, :] = vcat(mean(result_jag), mean(result_jag8), mean(result_har), mean(result_air), mean(result_roadnet))
     #positions = @time ParallelSFDP.layout(roadnet_adj, Point2f0, tol=0.9, K=1, iterations=10)
     #positions = @time ParallelSFDP.layout(roadnet_adj, Point3f0, tol=0.9, K=1, iterations=10)
 
@@ -116,15 +133,20 @@ function benchmark_graphs()
     println("Parallel Spring Jagmesh1")
     result_jag = @benchmark ParallelSpring.layout($jagmesh_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
+	println("Parallel Spring Jagmesh8")
+    result_jag8 = @benchmark ParallelSpring.layout($jagmesh8_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
+
     println("Parallel Spring Harvard500")
     result_har = @benchmark ParallelSpring.layout($harvard_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
     println("Parallel Spring airtraffic")
     result_air = @benchmark ParallelSpring.layout($airtraffic_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
 
-	results[idx + 1, :] = vcat(mean(result_jag), mean(result_har), mean(result_air))
-    #println("Parallel Spring roadNet")
-    #positions = @time ParallelSpring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
+    println("Parallel Spring roadNet")
+	result_air = @benchmark ParallelSpring.layout($roadnet_adj, $point, C=$C, iterations=$iter, initialtemp=$temp) samples=trials gcsample=true seconds=time
+
+	results[idx + 1, :] = vcat(mean(result_jag), mean(result_jag8), mean(result_har), mean(result_air), mean(result_roadnet))
+	#positions = @time ParallelSpring.layout(roadnet_adj, Point2f0, C=2.0, iterations=10, initialtemp=2.0)
     #positions = @time ParallelSpring.layout(roadnet_adj, Point3f0, C=2.0, iterations=10, initialtemp=2.0)
 
 	@everywhere GC.gc()
