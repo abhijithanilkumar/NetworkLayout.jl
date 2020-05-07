@@ -21,10 +21,9 @@ using Distributed
 using GeometryTypes
 using LinearAlgebra: norm
 
-struct Layout{M<:SharedArray, P<:SharedArray, F<:SharedArray, T<:AbstractFloat}
+struct Layout{M<:SharedArray, P<:SharedArray, T<:AbstractFloat}
   adj_matrix::M
   positions::P
-  force::F
   C::T
   iterations::Int
   initialtemp::T
@@ -36,8 +35,7 @@ function Layout(
         startpositions=(2*rand(PT, size(adj_matrix,1)) .- 1),
         C=2.0, iterations=100, initialtemp=2.0
     ) where {N, T}
-    nodes = size(adj_matrix, 1)
-    Layout(SharedArray(Matrix(adj_matrix)), SharedArray(startpositions), SharedArray(zeros(PT, nodes)), T(C), Int(iterations), T(initialtemp))
+    Layout(SharedArray(Matrix(adj_matrix)), SharedArray(startpositions), T(C), Int(iterations), T(initialtemp))
 end
 
 layout(adj_matrix, dim::Int; kw_args...) = layout(adj_matrix, Point{dim,Float64}; kw_args...)
@@ -63,11 +61,6 @@ function layout!(
         (i, state) = next
         next = iterate(network, state)
     end
-
-    #cleanup SharedArrays
-    cleanup_shared(network.adj_matrix)
-    cleanup_shared(network.force)
-
     return network.positions
 end
 
@@ -76,12 +69,12 @@ function iterate(network::Layout)
    return network, 1
 end
 
-function iterate(network::Layout{M, P, F, T}, state) where {M, P, F, T}
+function iterate(network::Layout{M,P,T}, state) where {M, P, T}
     # The optimal distance bewteen vertices
     adj_matrix = network.adj_matrix
     N = size(adj_matrix,1)
-    force = network.force
-    fill!(force, zero(eltype(F)))
+    force = zeros(eltype(P), N)
+    force = SharedArray(force)
     locs = network.positions
     C = network.C
     iterations = network.iterations
@@ -144,14 +137,6 @@ function compute_locs!(force, temp, locs)
         scale      = min(force_mag, temp)/force_mag
         locs[i]   += force[i] * scale
     end
-end
-
-function cleanup_shared(shared_array)
-    foreach(shared_array.refs) do r
-        @spawnat r.where finalize(fetch(r))
-    end
-    finalize(shared_array.s)
-    finalize(shared_array)
 end
 
 end #end of module
