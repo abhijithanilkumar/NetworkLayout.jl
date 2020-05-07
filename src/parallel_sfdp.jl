@@ -157,6 +157,7 @@ function dist_tolerance(locs,locs0, K, tol)
     return true
 end
 
+# Cleanup Shared Arrays
 function cleanup_shared(shared_array)
     foreach(shared_array.refs) do r
         @spawnat r.where finalize(fetch(r))

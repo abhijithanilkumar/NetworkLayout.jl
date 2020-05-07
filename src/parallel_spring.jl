@@ -146,6 +146,7 @@ function compute_locs!(force, temp, locs)
     end
 end
 
+# Cleanup Shared Arrays
 function cleanup_shared(shared_array)
     foreach(shared_array.refs) do r
         @spawnat r.where finalize(fetch(r))
