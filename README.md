@@ -11,9 +11,11 @@ Windows : [![Build status](https://ci.appveyor.com/api/projects/status/328ph0ct3
 
 ### Scalable Force Directed Placement
 
-Spring-Electric Force Directed Placement algorithm as explained in [Efficient and High Quality Force-Directed Graph Drawing](http://yifanhu.net/PUB/graph_draw_small.pdf) by Yifan Hu.
+Spring-Electric Force Directed Placement algorithm as explained in [Efficient and High Quality Force-Directed Graph Drawing](http://yifanhu.net/PUB/graph_draw_small.pdf) by Yifan Hu. A faster parallel implementation is also available which divides the work amongst a number of worker processes that operate on SharedArrays.
 
-Module Name : `SFDP`
+Module Name for the serial implementation : `SFDP`
+
+Module Name for the parallel implementation : `ParallelSFDP`
 
 #### Usage
 
@@ -107,9 +109,11 @@ The image shows a `LightGraphs.BinaryTree(4)` object layout by Buchheim Algorith
 
 ### Spring/Repulsion Model
 
-Spring/Repulsion model of Fruchterman and Reingold (1991). Original code taken from [GraphLayout.jl](https://github.com/IainNZ/GraphLayout.jl)
+Spring/Repulsion model of Fruchterman and Reingold (1991). Original code taken from [GraphLayout.jl](https://github.com/IainNZ/GraphLayout.jl).  A faster parallel implementation is also available which divides the work amongst a number of worker processes that operate on SharedArrays.
 
-Module Name : `Spring`
+Module Name for the serial implementation: `Spring`
+
+Module Name for the parallel implementation: `ParallelSpring`
 
 #### Usage
 
@@ -319,6 +323,9 @@ This figure shows a `LightGraphs.CompleteGraph(30)` object in 2 shells.
 The iterative algorithms have been benchmarked using 3 different graphs: `LightGraphs.WheelGraph(10)`, `LightGraphs.WheelGraph(100)` and `jagmesh1`. The number of iterations is fixed on 100. The following graph is obtained which shows SFDP to be the fastest in a general scenario, but Stress Algorithm is faster when the number of edges per graph is comparatively less, as in `jagmesh1`.
 
 ![bench](https://cloud.githubusercontent.com/assets/8404278/17642254/fd6f1718-615b-11e6-9a30-8c1a362aead7.png)
+
+The parallel implementation of the Spring algorithm was benchmarked using 4 different graphs: `Jagmesh1`, `Jagmesh8`, `Har-
+vard500` and `AirTraffic`, with 100000 iterations. The parallel implementation of the SFDP algorithm was benchmarked using `LightGraphs.WheelGraph(1000)` with 100 iterations. 
 
 
 
