@@ -18,10 +18,9 @@ using GeometryTypes
 using LinearAlgebra: norm
 using SharedArrays
 
-struct Layout{M<:SharedArray, P<:SharedArray, E<:SharedArray, T<:AbstractFloat}
+struct Layout{M<:SharedArray, P<:SharedArray, T<:AbstractFloat}
     adj_matrix::M
     positions::P
-    energy_vec::E
     tol::T
     C::T
     K::T
@@ -33,7 +32,7 @@ function Layout(
         startpositions=(2*rand(PT, size(adj_matrix,1)) .- 1),
         tol=1.0, C=0.2, K=1.0, iterations=100
     ) where {N, T}
-    Layout(SharedArray(Matrix(adj_matrix)), SharedArray(startpositions), SharedArray(zeros(nprocs())), T(tol), T(C), T(K), Int(iterations))
+    Layout(SharedArray(Matrix(adj_matrix)), SharedArray(startpositions), T(tol), T(C), T(K), Int(iterations))
 end
 
 layout(adj_matrix, dim::Int; kw_args...) = layout(adj_matrix, Point{dim,Float64}; kw_args...)
@@ -52,16 +51,10 @@ function layout!(adj_matrix,
     ) where {N, T}
     network = Layout(adj_matrix, Point{N,T}; startpositions=startpositions, kw_args...)
     next = iterate(network)
-
     while next != nothing
         (i, state) = next
         next = iterate(network, state)
     end
-
-    # Cleanup Shared Arrays
-    cleanup_shared(network.adj_matrix)
-    cleanup_shared(network.energy_vec)
-
     return network.positions
 end
 
@@ -69,7 +62,7 @@ end
 # then it could take a long time. Furthermore I'm not sure if the iterators are
 # the best solution in this situation
 
-function iterate(network::Layout{M, P, E, T}) where {M, P, E, T}
+function iterate(network::Layout{M, P, T}) where {M, P, T}
     return network, (one(T), typemax(T), 0, true, 1, copy(network.positions))
 end
 
@@ -78,8 +71,8 @@ function iterate(network::Layout, state)
     K, C, tol, adj_matrix = network.K, network.C, network.tol, network.adj_matrix
     locs = network.positions; locs0 = copy(locs)
     energy0 = energy; energy = zero(energy)
-    energy_vec = network.energy_vec
-    fill!(energy_vec, 0)
+    energy_vec = zeros(nprocs())
+    energy_vec = SharedArray(energy_vec)
     @sync begin
         for p in procs(adj_matrix)
             @async remotecall_wait(compute_locs!, p, adj_matrix, locs, energy_vec, step, C, K, p)
@@ -155,14 +148,6 @@ function dist_tolerance(locs,locs0, K, tol)
         end
     end
     return true
-end
-
-function cleanup_shared(shared_array)
-    foreach(shared_array.refs) do r
-        @spawnat r.where finalize(fetch(r))
-    end
-    finalize(shared_array.s)
-    finalize(shared_array)
 end
 
 end #end of module
